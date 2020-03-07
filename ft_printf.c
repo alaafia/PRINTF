@@ -6,157 +6,76 @@
 /*   By: alaafia <alaafia@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2020/02/05 00:47:12 by alaafia           #+#    #+#             */
-/*   Updated: 2020/02/05 16:31:59 by alaafia          ###   ########.fr       */
+/*   Updated: 2020/03/01 18:04:15 by alaafia          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include "ft_printf.h"
 
-void					ft_putchar(char c)
+int					ft_perc(char *s, int *i)
 {
-	write(1, &c, 1);
+	if (s[*i] == '%')
+	{
+		ft_putchar('%');
+		*i = *i + 1;
+		return (0);
+	}
+	return (1);
 }
 
-void					ft_putstr(const char *s)
+int				ft_space(char *s, int *i)
 {
-	int			i;
+	int			nb;
 
-	i = 0;
-	while (s[i])
-		ft_putchar(s[i++]);
+	nb = 0;
+	while (s[*i] == ' ')
+	{
+		*i = *i + 1;
+		nb++;
+	}
+	return (nb);
 }
 
-void					ft_putnbr(int nb)
+int					ft_print_pointer(t_flags t, va_list str)
 {
-	long long				n;
+	int					len;
 
-	n = nb;
-	if (nb < 0)
+	len = 0;
+	if (t.speci == 'p' && t.lenpres == 0 && t.flag_zero == 0)
 	{
-		ft_putchar('-');
-		n = n * -1;
+		if (t.flag_minus == 0 && t.width > 14)
+		{
+			ft_printflag(t.width - 14, ' ');
+			len = t.width - 2 - t.ispres - ft_numlen(t.width, t);
+		}
+		if (t.width <= 14)
+			len = 12 - t.ispres - ft_numlen(t.width, t) - t.flag_minus;
+		ft_putstr("0x");
+		ft_hex((long int)va_arg(str, long int));
+		if (t.flag_minus != 0 && t.width > 14)
+		{
+			ft_printflag(t.width - 14, ' ');
+			len = t.width - 2 - t.ispres - ft_numlen(t.width, t) - t.flag_minus;
+		}
+		if (t.is_etoile == 1)
+			len += ft_numlen(t.width, t) - t.is_etoile;
 	}
-	if (n > 9)
-	{
-		ft_putnbr(n / 10);
-		ft_putchar((n % 10) + 48);
-	}
-	else
-		ft_putchar(n + 48);
+	return (len);
 }
 
-void					ft_swit(int x)
-{
-	if (x > 9)
-	{
-		if (x == 10)
-			ft_putchar('A');
-		if (x == 11)
-			ft_putchar('B');
-		if (x == 12)
-			ft_putchar('C');
-		if (x == 13)
-			ft_putchar('D');
-		if (x == 14)
-			ft_putchar('E');
-		if (x == 15)
-			ft_putchar('F');
-	}
-	else
-		ft_putchar(x + 48);
-}
-
-void				ft_switchx(int x)
-{
-	if (x > 9)
-	{
-		if (x == 10)
-			ft_putchar('a');
-		if (x == 11)
-			ft_putchar('b');
-		if (x == 12)
-			ft_putchar('c');
-		if (x == 13)
-			ft_putchar('d');
-		if (x == 14)
-			ft_putchar('e');
-		if (x == 15)
-			ft_putchar('f');
-	}
-	else
-		ft_putchar(x + 48);
-}
-
-void				ft_putx(int nb)
-{
-	long long				n;
-
-	n = nb;
-	if (nb < 0)
-	{
-		ft_putchar('-');
-		n = n * -1;
-	}
-	if (n > 15)
-	{
-		ft_putx(n / 16);
-		ft_switchx((n % 16));
-	}
-	else
-	{
-		ft_switchx(n);
-	}
-}
-
-
-void				ft_putxx(int nb)
-{
-	long long				n;
-
-	n = nb;
-	if (nb < 0)
-	{
-		ft_putchar('-');
-		n = n * -1;
-	}
-	if (n > 15)
-	{
-		ft_putxx(n / 16);
-		ft_swit((n % 16));
-	}
-	else
-		ft_swit(n);
-}
-
-void				ft_hex(long long nb)
-{
-	long long				n;
-
-	n = nb;
-	if (nb < 0)
-	{
-		ft_putchar('-');
-		n = n * -1;
-	}
-	if (n > 15)
-	{
-		ft_hex(n / 16);
-		ft_switchx((n % 16));
-	}
-	else
-		ft_switchx(n);
-}
-
-void				ft_printf(char *s, ...)
+int					ft_printf(char *s, ...)
 {
 	int				i;
+	int				count;
 	va_list			str;
+	t_flags			flg;
 
+	if (s == NULL)
+		return (0);
 	va_start(str, s);
 	i = 0;
+	count = 0;
+	ft_init(&flg);
 	while (s[i])
 	{
 		if (s[i] != '%')
@@ -164,44 +83,21 @@ void				ft_printf(char *s, ...)
 		else
 		{
 			i++;
-			if (s[i] == '%')
-				ft_putchar('%');
-			if (s[i] == 'd' || s[i] == 'i')
-				ft_putnbr((int)va_arg(str, int));
-			if (s[i] == 'u')
-			{
-				int n;
-				if ((n = (int)va_arg(str, int)) >= 0)
-					ft_putnbr(n);
-				else
-					ft_putnbr(0);
+			if (ft_perc(s, &i))
+	   		{
+				count = count - ft_space(s, &i);
+				i += ft_stock(s + i, &flg, str);
+		   		// printf("num is neg ; %d\nflag_zero : %d \nflag_minus %d\nwidth %d\nis_etoile %d\nispres %d\nisetoile_pres%d\nenpres %d\nis_pres_zero %d\nspeci %c\n",flg.num_is_neg,flg.flag_zero,flg.flag_minus,flg.width,flg.is_etoile,flg.ispres,flg.is_etoile_pres,flg.lenpres,flg.is_pres_zero,flg.speci);
+				count += ft_print_str(flg, str);
+				count += ft_prin_integ(flg, str);
+				count += ft_print_char(flg, str);
+				count += ft_prin_unsigned(flg, str);
+				count += ft_print_pointer(flg, str);
+				count += ft_prin_hex(flg, str);
+				count += ft_prin_hexx(flg, str);
 			}
-			if (s[i] == 'x')
-				ft_putx((int)va_arg(str, int));
-			if (s[i] == 'X')
-				ft_putxx((int)va_arg(str, int));
-			if (s[i] == 'p')
-			{
-				ft_putstr("0x");
-				ft_hex((long int)va_arg(str, long int));
-			}
-			if (s[i] == 'c')
-				ft_putchar(va_arg(str, int));
-			if (s[i] == 's')
-				ft_putstr((char *)va_arg(str, char *));
-			i++;
 		}
 	}
 	va_end(str);
-}
-
-int main (void)
-{
-   int	a = 24;
-   char		*t = "txt";
-   
-  printf("%p\n",t);
-  ft_printf("%p\n",t);
-ft_printf("test char : %c \nstring : %s\nunsigned int : %u\n hexadecimal num %X\n",'f',"okaay wait",1111,455578);
-printf("test char : %c \nstring : %s\nunsigned int : %u\n hexadecimal num %X",'f',"okaay wait ",1111,455578);
+	return (count + i);
 }
