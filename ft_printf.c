@@ -12,92 +12,57 @@
 
 #include "ft_printf.h"
 
-int					ft_perc(char *s, int *i)
+void		ft_cleanup(t_config *con)
 {
-	if (s[*i] == '%')
-	{
-		ft_putchar('%');
-		*i = *i + 1;
-		return (0);
-	}
-	return (1);
+	con->flag = 0;
+	con->width = 0;
+	con->precision = 0;
+	con->specifier = 0;
+	con->has_precision = 0;
+	con->nbr = 0;
+	con->length = 0;
+	con->sign = 0;
 }
 
-int				ft_space(char *s, int *i)
+t_config	ft_init_config(va_list *vargs)
 {
-	int			nb;
+	t_config	tmp;
 
-	nb = 0;
-	while (s[*i] == ' ')
-	{
-		*i = *i + 1;
-		nb++;
-	}
-	return (nb);
+	tmp.i = 0;
+	tmp.ret = 0;
+	tmp.flag = 0;
+	tmp.vargs = vargs;
+	tmp.width = 0;
+	tmp.precision = 0;
+	tmp.specifier = 0;
+	tmp.has_precision = 0;
+	tmp.nbr = 0;
+	tmp.length = 0;
+	tmp.sign = 0;
+	tmp.n_zeroes = 0;
+	return (tmp);
 }
 
-int					ft_print_pointer(t_flags t, va_list str)
+int			ft_printf(char const *format, ...)
 {
-	int					len;
+	va_list		vargs;
+	t_config	con;
 
-	len = 0;
-	if (t.speci == 'p' && t.lenpres == 0 && t.flag_zero == 0)
+	con = ft_init_config(&vargs);
+	va_start(vargs, format);
+	while (format[con.i])
 	{
-		if (t.flag_minus == 0 && t.width > 14)
+		if (format[con.i] == '%')
 		{
-			ft_printflag(t.width - 14, ' ');
-			len = t.width - 2 - t.ispres - ft_numlen(t.width, t);
+			ft_parse((char *)format, &con);
+			ft_cleanup(&con);
 		}
-		if (t.width <= 14)
-			len = 12 - t.ispres - ft_numlen(t.width, t) - t.flag_minus;
-		ft_putstr("0x");
-		ft_hex((long int)va_arg(str, long int));
-		if (t.flag_minus != 0 && t.width > 14)
-		{
-			ft_printflag(t.width - 14, ' ');
-			len = t.width - 2 - t.ispres - ft_numlen(t.width, t) - t.flag_minus;
-		}
-		if (t.is_etoile == 1)
-			len += ft_numlen(t.width, t) - t.is_etoile;
-	}
-	return (len);
-}
-
-int					ft_printf(char *s, ...)
-{
-	int				i;
-	int				count;
-	va_list			str;
-	t_flags			flg;
-
-	if (s == NULL)
-		return (0);
-	va_start(str, s);
-	i = 0;
-	count = 0;
-	ft_init(&flg);
-	while (s[i])
-	{
-		if (s[i] != '%')
-			ft_putchar(s[i++]);
 		else
 		{
-			i++;
-			if (ft_perc(s, &i))
-	   		{
-				count = count - ft_space(s, &i);
-				i += ft_stock(s + i, &flg, str);
-		   		// printf("num is neg ; %d\nflag_zero : %d \nflag_minus %d\nwidth %d\nis_etoile %d\nispres %d\nisetoile_pres%d\nenpres %d\nis_pres_zero %d\nspeci %c\n",flg.num_is_neg,flg.flag_zero,flg.flag_minus,flg.width,flg.is_etoile,flg.ispres,flg.is_etoile_pres,flg.lenpres,flg.is_pres_zero,flg.speci);
-				count += ft_print_str(flg, str);
-				count += ft_prin_integ(flg, str);
-				count += ft_print_char(flg, str);
-				count += ft_prin_unsigned(flg, str);
-				count += ft_print_pointer(flg, str);
-				count += ft_prin_hex(flg, str);
-				count += ft_prin_hexx(flg, str);
-			}
+			ft_putchar(format[con.i++]);
+			con.ret++;
 		}
 	}
-	va_end(str);
-	return (count + i);
+	va_end(vargs);
+	return (con.ret);
 }

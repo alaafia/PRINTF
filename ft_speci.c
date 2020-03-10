@@ -12,57 +12,91 @@
 
 #include "ft_printf.h"
 
-void				ft_print_neg(t_flags t, long long n, int *len)
+void	ft_width(char *format, t_config *con)
 {
-	if ((t.num_is_neg == 1 && t.ispres == 1 && t.lenpres == 0)
-	|| (t.num_is_neg == 1 && t.ispres == 0 && t.flag_zero == 0)
-	|| (t.lenpres != 0 && t.flag_minus == 0 && t.flag_zero == 0 && t.width == 0
-	&& t.lenpres <= ft_numlen(n, t) && t.num_is_neg == 1))
-		ft_putchar('-');
-	ft_putnbr(n, t);
-	if (t.num_is_neg == 1 && t.width <= ft_numlen(n, t))
-		*len = *len + t.num_is_neg;
-}
+	int	sum;
 
-void				ft_putxx(long long nb)
-{
-	long long				n;
-
-	n = nb;
-	if (nb < 0)
+	if (format[con->i] == '*')
 	{
-		ft_putchar('-');
-		n = n * -1;
-	}
-	if (n > 15)
-	{
-		ft_putxx(n / 16);
-		ft_swit((n % 16));
+		con->width = va_arg(*(con->vargs), int);
+		if (con->width < 0)
+		{
+			con->flag = '-';
+			con->width *= -1;
+		}
+		con->i++;
 	}
 	else
 	{
-		ft_swit(n);
+		sum = 0;
+		while (format[con->i] == '-' || format[con->i] == '0')
+			con->i++;
+		while (format[con->i] >= '0' && format[con->i] <= '9')
+			sum = (sum * 10) + (format[con->i++] - '0');
+		con->width = sum;
 	}
 }
 
-int				ft_hex(long long nb)
+void	ft_precision(char *format, t_config *con)
 {
-	long long				n;
+	int	sum;
 
-	n = nb;
-	if (nb < 0)
+	if (format[con->i] == '.')
 	{
-		ft_putchar('-');
-		n = n * -1;
+		sum = 0;
+		con->i++;
+		if (format[con->i++] == '*')
+			con->precision = va_arg(*(con->vargs), int);
+		else
+		{
+			con->i--;
+			while (format[con->i] >= '0' && format[con->i] <= '9')
+				sum = sum * 10 + (format[con->i++] - '0');
+			con->precision = sum;
+		}
+		con->has_precision = 1;
+		if (con->precision < 0)
+			con->has_precision = 0;
 	}
-	if (n > 15)
+}
+
+void	ft_specifier(char *format, t_config *con)
+{
+	if (format[con->i] == 'd' || format[con->i] == 'c' ||
+		format[con->i] == 's' || format[con->i] == 'u' ||
+		format[con->i] == 'x' || format[con->i] == 'X' ||
+		format[con->i] == 'i' || format[con->i] == '%' ||
+		format[con->i] == 'p')
+		con->specifier = format[con->i++];
+}
+
+void	ft_reader(char *format, t_config *con)
+{
+	ft_width(format, con);
+	ft_precision(format, con);
+	ft_specifier(format, con);
+}
+
+void	ft_parse(char *format, t_config *con)
+{
+	con->i++;
+	if (format[con->i] == '0' && format[con->i + 1] == '-')
 	{
-		ft_hex(n / 16);
-		ft_switchx((n % 16));
+		con->flag = '-';
+		con->i += 2;
 	}
+	if (format[con->i] == '-' || format[con->i] == '0')
+		con->flag = format[con->i++];
+	ft_reader(format, con);
+	if (con->specifier == 'p')
+		ft_show_pointer(con);
+	else if (con->specifier == 's')
+		ft_show_string(con);
+	else if (con->specifier == 'x' || con->specifier == 'X')
+		ft_show_hex(con);
+	else if (con->specifier == 'd' || con->specifier == 'i'
+			|| con->specifier == 'u')
+		ft_show_nbr(con);
 	else
-	{
-		ft_switchx(n);
-	}
-	return (0);
+		ft_show_char(con);
 }

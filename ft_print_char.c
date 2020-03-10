@@ -12,30 +12,46 @@
 
 #include "ft_printf.h"
 
-int					ft_print_char(t_flags t, va_list str)
+void	ft_show_char_flag(t_config *con)
 {
-	char		c;
-	int			l;
+	int i;
 
-	l = 0;
-	if (t.speci == 'c')
+	i = 0;
+	if (con->flag == 0 || con->flag == '0')
 	{
-		c = (char)(va_arg(str, int));
-		if (t.flag_minus == 0 && t.width != 0)
+		if (con->flag == 0)
+			while (i++ < con->width - 1)
+			{
+				ft_putchar(' ');
+				con->ret++;
+			}
+		else
 		{
-			ft_printflag(t.width - 1, ' ');
-			if (t.is_etoile == 0)
-				l -= ft_numlen(t.width, t) - 1;
-			l += t.width - 2;
+			if (con->specifier == '%')
+				while (i++ < con->width - 1)
+				{
+					ft_putchar('0');
+					con->ret++;
+				}
 		}
-		ft_putchar(c);
-		if (t.flag_minus != 0)
-			l += ft_flag_minus(t, 1) - 2;
-		if (t.is_etoile == 0 && t.flag_minus != 0)
-			l -= ft_numlen(t.width, t);
-		if (t.width == 0 && t.is_etoile == 1)
-			l--;
-		return (l - 1 - t.ispres);
 	}
-	return (0);
+}
+
+void	ft_show_char(t_config *con)
+{
+	int	i;
+
+	ft_show_char_flag(con);
+	if (con->specifier == '%')
+		ft_putchar('%');
+	else
+		ft_putchar(va_arg(*(con->vargs), int));
+	i = 0;
+	if (con->flag == '-')
+		while (i++ < con->width - 1)
+		{
+			ft_putchar(' ');
+			con->ret++;
+		}
+	con->ret++;
 }

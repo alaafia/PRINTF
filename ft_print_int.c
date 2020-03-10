@@ -12,70 +12,126 @@
 
 #include "ft_printf.h"
 
-
-int					ft_prin_integ(t_flags t, va_list str)
+long	ft_show_nbr_read(t_config *con, int *sign,
+							int *length, int *n_zeroes)
 {
-	long long			n;
-	int					len;
-	int					i;
+	long tmp;
 
-	len = 0;
-	i = 0;
-	if (t.speci == 'd' || t.speci == 'i')
-	{
-		n = (long long)va_arg(str, int);
-		if (n < 0)
-			t.num_is_neg = 1;
-		ft_zero(&t, n, &len);
-		i = ft_without_flags(t, &len, n);
-		ft_pres_minus(t, &len, n, &i);
-		ft_pres_only(t, &len, n, &i);
-		ft_pres_zero(t, &len, n, &i);
-		ft_print_flag(t, &len, n, i);
-	}
-	return (len);
+	tmp = 0;
+	if (con->specifier == 'u')
+		tmp = va_arg(*(con->vargs), unsigned int);
+	else
+		tmp = va_arg(*(con->vargs), int);
+	*sign = tmp < 0 ? 1 : 0;
+	if (*sign)
+		*length = ft_intlen(tmp * -1) + 1;
+	else
+		*length = ft_intlen(tmp);
+	*n_zeroes = 0;
+	con->nbr = &tmp;
+	con->length = length;
+	con->n_zeroes = n_zeroes;
+	con->sign = sign;
+	return (tmp);
 }
 
-int					ft_prin_hex(t_flags t, va_list str)
+int		ft_show_nbr_print_n(t_config *con)
 {
-	long long			n;
-	int					len;
-	int					i;
+	int i;
+	int	print_n;
 
-	len = 0;
 	i = 0;
-	if (t.speci == 'x')
+	print_n = 0;
+	if (con->has_precision)
 	{
-		n = (long long)va_arg(str, long);
-		ft_zero(&t, n, &len);
-		t.num_is_neg = 0;
-		i = ft_without_flags(t, &len, n);
-		ft_pres_minus(t, &len, n, &i);
-		ft_pres_only(t, &len, n, &i);
-		ft_pres_zero(t, &len, n, &i);
-		ft_print_flag(t, &len, n, i);
+		if (con->precision >= con->width)
+		{
+			con->flag = '0';
+			con->width = con->precision + *con->sign;
+		}
+		else
+		{
+			if (con->flag == '0')
+				con->flag = 0;
+			if (*con->nbr < 0 && con->precision != 0)
+				print_n = 1;
+			i = 0;
+			while (i++ < con->precision - *con->length + *con->sign)
+				*(con->n_zeroes) += 1;
+		}
 	}
-	return (len);
+	return (print_n == 1 ? 1 : 0);
 }
 
-int					ft_prin_hexx(t_flags t, va_list str)
+void	ft_show_nbr_flag(t_config *con)
 {
-	long long			n;
-	int					len;
-	int					i;
+	int	i;
 
-	len = 0;
 	i = 0;
-	if (t.speci == 'X')
+	if (con->flag == 0 || con->flag == '0')
 	{
-		n = (long long)va_arg(str, long);
-		ft_zero(&t, n, &len);
-		t.num_is_neg = 0;
-		i = ft_without_flags(t, &len, n);
-		ft_pres_minus(t, &len, n, &i);
-		ft_pres_only(t, &len, n, &i);
-		ft_pres_zero(t, &len, n, &i);
-		ft_print_flag(t, &len, n, i);
+		if (con->flag == 0)
+		{
+			while (i++ < con->width - *con->length - *con->n_zeroes)
+				ft_putchar(' ');
+		}
+		else
+		{
+			if (*con->sign)
+				ft_putchar('-');
+			while (i++ < con->width - *con->length - *con->n_zeroes)
+				ft_putchar('0');
+		}
 	}
-	return (len);
+}
+
+void	ft_show_print(t_config *con, long tmp, int print_n)
+{
+	int	i;
+
+	i = 0;
+	if (print_n)
+		ft_putchar('-');
+	while (i++ < *con->n_zeroes)
+		ft_putchar('0');
+	if ((*con->sign && con->flag == '0') || (print_n && tmp < 0))
+		if (tmp == -2147483648)
+			ft_putstr("2147483648");
+		else
+			ft_putnbr(tmp * -1);
+	else
+	{
+		if (con->specifier == 'u')
+			ft_putunbr(tmp);
+		else
+			ft_putnbr(tmp);
+	}
+}
+
+void	ft_show_nbr(t_config *con)
+{
+	long	tmp;
+	int		length;
+	int		sign;
+	int		n_zeroes;
+	int		print_n;
+
+	tmp = ft_show_nbr_read(con, &sign, &length, &n_zeroes);
+	print_n = ft_show_nbr_print_n(con);
+	ft_show_nbr_flag(con);
+	if (con->has_precision && tmp == 0 && con->precision == 0)
+		if (con->width != 0)
+			ft_putchar(' ');
+		else
+			con->ret--;
+	else
+		ft_show_print(con, tmp, print_n);
+	print_n = 0;
+	if (con->flag == '-')
+		while (print_n++ < con->width - length - n_zeroes)
+			ft_putchar(' ');
+	if (con->width - length > 0)
+		con->ret += con->width;
+	else
+		con->ret += length;
 }

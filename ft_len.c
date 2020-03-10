@@ -12,74 +12,50 @@
 
 #include "ft_printf.h"
 
-int				ft_hex_len(long long n)
+int	ft_strlen(char *str)
 {
-	int						j;
+	int	i;
 
-	j = 0;
-	while (n)
-	{
-		j++;
-		n = n / 16;
-	}
-	return (j);
-}
-
-int					ft_numlen(long n, t_flags t)
-{
-	int			i;
-
-	if (t.speci == 'x' || t.speci == 'X')
-		{
-			return (ft_hex_len(n));
-		}
 	i = 0;
-	while (n)
-	{
+	while (str[i] != '\0')
 		i++;
-		n = n / 10;
-	}
 	return (i);
 }
+© 2020 GitHub, Inc.
 
-int					ft_look(char *s, char c, int *i)
+ int		ft_hexlen(size_t n)
 {
-	int			n;
-
-	n = 0;
-	while (s[*i] == c)
-	{
-		n++;
-		*i = *i + 1;
-	}
-	return (n);
-}
-
-int					ft_strlen(const char *str)
-{
-	int			i;
+	int	i;
 
 	i = 0;
-	if (str != NULL)
+	if (n == 0)
+		return (1);
+	while (n > 0)
 	{
-		while (str[i] != '\0')
-		{
-			i++;
-		}
+		n /= 16;
+		i++;
 	}
 	return (i);
 }
 
-int					ft_isdigit(int arg)
+void	ft_putnbr(int n)
 {
-	if (arg >= '0' && arg <= '9')
-		return (1);
-	return (0);
+	unsigned int	tmp;
+
+	tmp = n;
+	if (n < 0)
+	{
+		tmp = -n;
+		ft_putchar('-');
+	}
+	if (tmp / 10 > 0)
+		ft_putnbr(tmp / 10);
+	ft_putchar('0' + tmp % 10);
 }
 
-int					ft_isalpha(int c)
+void	ft_putunbr(unsigned int n)
 {
-	if ((c > 64 && c < 91) || (c > 96 && c < 123))
-		return (1);
-	return (0);
+	if (n / 10 > 0)
+		ft_putunbr(n / 10);
+	ft_putchar('0' + n % 10);
 }
